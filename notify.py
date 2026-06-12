@@ -58,10 +58,8 @@ def build_message(matches, target_date, mode):
     lines = [f"{emoji} <b>Clipping {when} — {human}</b>", ""]
     for m in matches:
         creators = " / ".join(m["creators"])
-        covers = ", ".join(m["covers"])
         lines.append(f"<b>{m['time']} ET</b> — {m['match']}")
-        lines.append(f"   📍 {m['venue']}")
-        lines.append(f"   👤 {creators} · covers {covers}")
+        lines.append(f"   👤 {creators}")
         lines.append("")
     n = len(matches)
     lines.append(f"{n} match{'' if n == 1 else 'es'} to clip. 🍿")
