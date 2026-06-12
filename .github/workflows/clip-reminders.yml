@@ -1,0 +1,35 @@
+name: Clip Reminders
+
+on:
+  schedule:
+    # GitHub cron is UTC. The tournament runs entirely in EDT (UTC-4).
+    - cron: "0 22 * * *"   # 18:00 ET (evening before) -> tomorrow's matches
+    - cron: "0 12 * * *"   # 08:00 ET (morning of)     -> today's matches
+  workflow_dispatch:        # manual run button in the Actions tab
+    inputs:
+      mode:
+        description: "today or tomorrow"
+        default: "today"
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Decide mode
+        id: mode
+        run: |
+          if [ "${{ github.event.schedule }}" = "0 22 * * *" ]; then
+            echo "mode=tomorrow" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.schedule }}" = "0 12 * * *" ]; then
+            echo "mode=today" >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=${{ github.event.inputs.mode || 'today' }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Send reminder
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python3 notify.py --mode "${{ steps.mode.outputs.mode }}"

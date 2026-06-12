@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World Cup 2026 — Clipping Schedule</title>
+<style>
+  :root{
+    --bg:#0b0e14; --panel:#141925; --panel2:#1b2233; --line:#232c40;
+    --text:#e7ecf5; --muted:#8a96ad; --accent:#3ddc91;
+    --peak:#5b8cff; --luca:#ff7ad9; --both:#ffb86b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.5;-webkit-font-smoothing:antialiased}
+  header{padding:28px 20px 18px;max-width:920px;margin:0 auto}
+  h1{margin:0 0 4px;font-size:24px;letter-spacing:-0.4px}
+  .sub{color:var(--muted);font-size:14px}
+  .bar{position:sticky;top:0;z-index:10;background:rgba(11,14,20,.92);
+    backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:12px 20px}
+  .bar-inner{max-width:920px;margin:0 auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .filters{display:flex;gap:8px;flex-wrap:wrap}
+  button.f{background:var(--panel);color:var(--text);border:1px solid var(--line);
+    padding:7px 14px;border-radius:999px;font-size:13px;cursor:pointer;transition:.15s}
+  button.f:hover{border-color:#3a465f}
+  button.f.active{background:var(--accent);color:#06281a;border-color:var(--accent);font-weight:600}
+  .count{margin-left:auto;color:var(--muted);font-size:13px}
+  main{max-width:920px;margin:0 auto;padding:8px 20px 60px}
+  .day{margin-top:26px}
+  .day-h{display:flex;align-items:baseline;gap:10px;
+    border-bottom:1px solid var(--line);padding-bottom:6px;margin-bottom:10px}
+  .day-h .d{font-size:16px;font-weight:600}
+  .day-h .n{color:var(--muted);font-size:12px}
+  .match{display:flex;gap:14px;align-items:center;background:var(--panel);
+    border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px}
+  .time{flex:0 0 88px;font-variant-numeric:tabular-nums;font-weight:600;font-size:13px;color:var(--accent)}
+  .info{flex:1;min-width:0}
+  .teams{font-size:15px;font-weight:600}
+  .meta{color:var(--muted);font-size:12.5px;margin-top:2px}
+  .covers{display:inline-block;background:var(--panel2);border:1px solid var(--line);
+    color:var(--text);font-size:11px;padding:1px 7px;border-radius:6px;margin-left:6px;font-weight:500}
+  .badges{display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;max-width:160px}
+  .b{font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px;white-space:nowrap}
+  .b.peak{background:rgba(91,140,255,.16);color:var(--peak);border:1px solid rgba(91,140,255,.35)}
+  .b.luca{background:rgba(255,122,217,.16);color:var(--luca);border:1px solid rgba(255,122,217,.35)}
+  .ko{background:var(--panel);border:1px dashed #33405c;border-radius:12px;padding:14px;margin-bottom:8px}
+  .ko .r{font-weight:600;font-size:15px}
+  .ko .dt{color:var(--accent);font-size:13px;font-weight:600;margin-top:2px}
+  .ko .tbd{color:var(--muted);font-size:12.5px;margin-top:3px}
+  .note{background:var(--panel2);border:1px solid var(--line);border-radius:12px;
+    padding:14px 16px;margin-top:22px;color:var(--muted);font-size:13px}
+  .note b{color:var(--text)}
+  .sec{margin-top:34px;font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+  .hidden{display:none !important}
+  @media print{
+    :root{--bg:#fff;--panel:#fff;--panel2:#f6f6f6;--line:#ccc;--text:#000;--muted:#555;--accent:#0a7d4d}
+    body{background:#fff;color:#000}
+    .bar{display:none}
+    header{padding:0 0 10px}
+    h1{font-size:20px}
+    main{padding:0;max-width:100%}
+    .day{margin-top:14px}
+    .match,.ko{break-inside:avoid;page-break-inside:avoid;border:1px solid #ccc;background:#fff;margin-bottom:6px}
+    .covers{background:#eee;border-color:#bbb;color:#000}
+    .b.peak{background:#eef2ff;color:#1b3a8f;border-color:#1b3a8f}
+    .b.luca{background:#fdeef8;color:#a01070;border-color:#a01070}
+    .note{background:#f6f6f6}
+    .sec{color:#000}
+    @page{margin:1.4cm}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>⚽ World Cup 2026 — Clipping Schedule</h1>
+  <div class="sub">All times <b>ET</b>. Group stage Jun 13–27 · Knockouts Jun 28–Jul 19.</div>
+</header>
+
+<div class="bar"><div class="bar-inner">
+  <div class="filters">
+    <button class="f active" data-c="all">All</button>
+    <button class="f" data-c="PeakFighter">PeakFighter</button>
+    <button class="f" data-c="Luca">Luca</button>
+  </div>
+  <span class="count" id="count"></span>
+</div></div>
+
+<main id="app"></main>
+
+<script>
+// covers = which of PeakFighter's tracked teams this match clips
+// creators = who is assigned to clip it
+const MATCHES = [
+  {dt:"2026-06-13T18:00", date:"2026-06-13", time:"6:00 PM",  m:"Brazil vs Morocco",        covers:["Brazil"],                venue:"MetLife Stadium · East Rutherford, NJ", creators:["PeakFighter"]},
+  {dt:"2026-06-14T12:00", date:"2026-06-14", time:"12:00 PM", m:"Germany vs Curaçao",        covers:["Germany"],               venue:"NRG Stadium · Houston, TX",            creators:["PeakFighter"]},
+  {dt:"2026-06-14T15:00", date:"2026-06-14", time:"3:00 PM",  m:"Netherlands vs Japan",      covers:["Netherlands"],           venue:"AT&T Stadium · Arlington, TX",         creators:["PeakFighter"]},
+  {dt:"2026-06-14T21:00", date:"2026-06-14", time:"9:00 PM",  m:"Sweden vs Tunisia",         covers:["Sweden"],                venue:"Estadio BBVA · Monterrey, MX",         creators:["PeakFighter"]},
+  {dt:"2026-06-15T12:00", date:"2026-06-15", time:"12:00 PM", m:"Spain vs Cape Verde",       covers:["Spain"],                 venue:"Mercedes-Benz Stadium · Atlanta, GA",  creators:["PeakFighter","Luca"]},
+  {dt:"2026-06-15T15:00", date:"2026-06-15", time:"3:00 PM",  m:"Belgium vs Egypt",          covers:["Belgium"],               venue:"Lumen Field · Seattle, WA",            creators:["PeakFighter"]},
+  {dt:"2026-06-16T15:00", date:"2026-06-16", time:"3:00 PM",  m:"France vs Senegal",         covers:["France"],                venue:"MetLife Stadium · East Rutherford, NJ",creators:["PeakFighter"]},
+  {dt:"2026-06-16T18:00", date:"2026-06-16", time:"6:00 PM",  m:"Iraq vs Norway",            covers:["Norway"],                venue:"Gillette Stadium · Foxborough, MA",    creators:["PeakFighter"]},
+  {dt:"2026-06-16T20:00", date:"2026-06-16", time:"8:00 PM",  m:"Argentina vs Algeria",      covers:["Argentina"],             venue:"Arrowhead Stadium · Kansas City, MO",  creators:["PeakFighter"]},
+  {dt:"2026-06-17T13:00", date:"2026-06-17", time:"1:00 PM",  m:"Portugal vs DR Congo",      covers:["Portugal"],              venue:"NRG Stadium · Houston, TX",            creators:["PeakFighter"]},
+  {dt:"2026-06-17T15:00", date:"2026-06-17", time:"3:00 PM",  m:"England vs Croatia",        covers:["England"],               venue:"AT&T Stadium · Arlington, TX",         creators:["PeakFighter"]},
+  {dt:"2026-06-19T20:30", date:"2026-06-19", time:"8:30 PM",  m:"Brazil vs Haiti",           covers:["Brazil"],                venue:"Lincoln Financial Field · Philadelphia, PA", creators:["PeakFighter"]},
+  {dt:"2026-06-20T12:00", date:"2026-06-20", time:"12:00 PM", m:"Netherlands vs Sweden",     covers:["Netherlands","Sweden"],  venue:"NRG Stadium · Houston, TX",            creators:["PeakFighter"]},
+  {dt:"2026-06-20T16:00", date:"2026-06-20", time:"4:00 PM",  m:"Germany vs Ivory Coast",    covers:["Germany"],               venue:"BMO Field · Toronto, ON",              creators:["PeakFighter"]},
+  {dt:"2026-06-21T12:00", date:"2026-06-21", time:"12:00 PM", m:"Spain vs Saudi Arabia",     covers:["Spain"],                 venue:"Mercedes-Benz Stadium · Atlanta, GA",  creators:["PeakFighter","Luca"]},
+  {dt:"2026-06-21T15:00", date:"2026-06-21", time:"3:00 PM",  m:"Belgium vs Iran",           covers:["Belgium"],               venue:"SoFi Stadium · Inglewood, CA",         creators:["PeakFighter"]},
+  {dt:"2026-06-22T12:00", date:"2026-06-22", time:"12:00 PM", m:"Argentina vs Austria",      covers:["Argentina"],             venue:"AT&T Stadium · Arlington, TX",         creators:["PeakFighter"]},
+  {dt:"2026-06-22T17:00", date:"2026-06-22", time:"5:00 PM",  m:"France vs Iraq",            covers:["France"],                venue:"Lincoln Financial Field · Philadelphia, PA", creators:["PeakFighter"]},
+  {dt:"2026-06-22T20:00", date:"2026-06-22", time:"8:00 PM",  m:"Norway vs Senegal",         covers:["Norway"],                venue:"MetLife Stadium · East Rutherford, NJ",creators:["PeakFighter"]},
+  {dt:"2026-06-23T13:00", date:"2026-06-23", time:"1:00 PM",  m:"Portugal vs Uzbekistan",    covers:["Portugal"],              venue:"NRG Stadium · Houston, TX",            creators:["PeakFighter"]},
+  {dt:"2026-06-23T16:00", date:"2026-06-23", time:"4:00 PM",  m:"England vs Ghana",          covers:["England"],               venue:"Gillette Stadium · Foxborough, MA",    creators:["PeakFighter"]},
+  {dt:"2026-06-24T18:00", date:"2026-06-24", time:"6:00 PM",  m:"Scotland vs Brazil",        covers:["Brazil"],                venue:"Hard Rock Stadium · Miami Gardens, FL",creators:["PeakFighter"]},
+  {dt:"2026-06-25T16:00", date:"2026-06-25", time:"4:00 PM",  m:"Ecuador vs Germany",        covers:["Germany"],               venue:"MetLife Stadium · East Rutherford, NJ",creators:["PeakFighter"]},
+  {dt:"2026-06-25T18:00", date:"2026-06-25", time:"6:00 PM",  m:"Japan vs Sweden",           covers:["Sweden"],                venue:"AT&T Stadium · Arlington, TX",         creators:["PeakFighter"]},
+  {dt:"2026-06-25T18:01", date:"2026-06-25", time:"6:00 PM",  m:"Tunisia vs Netherlands",    covers:["Netherlands"],           venue:"Arrowhead Stadium · Kansas City, MO",  creators:["PeakFighter"]},
+  {dt:"2026-06-26T15:00", date:"2026-06-26", time:"3:00 PM",  m:"Norway vs France",          covers:["Norway","France"],       venue:"Gillette Stadium · Foxborough, MA",    creators:["PeakFighter"]},
+  {dt:"2026-06-26T20:00", date:"2026-06-26", time:"8:00 PM",  m:"Uruguay vs Spain",          covers:["Spain"],                 venue:"Estadio Akron · Guadalajara, MX",      creators:["PeakFighter"]},
+  {dt:"2026-06-26T23:00", date:"2026-06-26", time:"11:00 PM", m:"New Zealand vs Belgium",    covers:["Belgium"],               venue:"BC Place · Vancouver, BC",             creators:["PeakFighter"]},
+  {dt:"2026-06-27T17:00", date:"2026-06-27", time:"5:00 PM",  m:"Panama vs England",         covers:["England"],               venue:"MetLife Stadium · East Rutherford, NJ",creators:["PeakFighter"]},
+  {dt:"2026-06-27T19:30", date:"2026-06-27", time:"7:30 PM",  m:"Colombia vs Portugal",      covers:["Portugal"],              venue:"Hard Rock Stadium · Miami Gardens, FL",creators:["PeakFighter"]},
+  {dt:"2026-06-27T21:00", date:"2026-06-27", time:"9:00 PM",  m:"Jordan vs Argentina",       covers:["Argentina"],             venue:"AT&T Stadium · Arlington, TX",         creators:["PeakFighter"]},
+];
+
+const KNOCKOUTS = [
+  {r:"Round of 32", dt:"June 28 – July 3, 2026"},
+  {r:"Round of 16", dt:"July 4 – July 7, 2026"},
+  {r:"Quarter-finals", dt:"July 9 – July 11, 2026"},
+  {r:"Semi-finals", dt:"July 14 – July 15, 2026"},
+  {r:"Third-place play-off", dt:"July 18, 2026"},
+  {r:"Final", dt:"July 19, 2026"},
+];
+
+const DOW = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function fmtDay(iso){const d=new Date(iso+"T12:00");return DOW[d.getDay()]+", "+MON[d.getMonth()]+" "+d.getDate();}
+
+let filter="all";
+const app=document.getElementById("app");
+const countEl=document.getElementById("count");
+
+function matchRow(m){
+  const covers=m.covers.map(c=>`<span class="covers">${c}</span>`).join("");
+  const badges=m.creators.map(c=>`<span class="b ${c==="Luca"?"luca":"peak"}">${c}</span>`).join("");
+  return `<div class="match">
+      <div class="time">${m.time}</div>
+      <div class="info"><div class="teams">${m.m}${covers}</div><div class="meta">${m.venue}</div></div>
+      <div class="badges">${badges}</div>
+    </div>`;
+}
+
+function render(){
+  const list=MATCHES.filter(m=>filter==="all"||m.creators.includes(filter));
+  // group by date, preserving order
+  const days=[];
+  list.forEach(m=>{
+    let g=days.find(d=>d.date===m.date);
+    if(!g){g={date:m.date,items:[]};days.push(g);}
+    g.items.push(m);
+  });
+  let html="";
+  days.forEach(g=>{
+    html+=`<div class="day"><div class="day-h"><span class="d">${fmtDay(g.date)}</span><span class="n">${g.items.length} to clip</span></div>`;
+    html+=g.items.map(matchRow).join("");
+    html+=`</div>`;
+  });
+
+  // Knockouts only relevant to PeakFighter ("all knockout games")
+  let ko="";
+  if(filter==="all"||filter==="PeakFighter"){
+    ko=`<div class="sec">Knockout stage — PeakFighter</div>`;
+    KNOCKOUTS.forEach(k=>{
+      ko+=`<div class="ko"><div class="r">${k.r}</div><div class="dt">${k.dt}</div><div class="tbd">Matchups TBD — set once group results are in.</div></div>`;
+    });
+  }
+
+  const note=`<div class="note">
+    <b>Notes.</b> &nbsp;• <b>Doubles:</b> <i>Netherlands vs Sweden</i> (Jun 20) and <i>Norway vs France</i> (Jun 26) each cover two of PeakFighter's teams in one match.<br>
+    • <b>Overlap:</b> Luca and PeakFighter are both on <i>Spain vs Cape Verde</i> and <i>Spain vs Saudi Arabia</i> — dedupe if only one should clip those.<br>
+    • <b>Knockouts:</b> listed as round windows; exact matchups/times fill in as groups finish. Confirm whether PeakFighter clips <i>every</i> knockout match or only his teams'.
+  </div>`;
+
+  app.innerHTML=html+ko+note;
+  countEl.textContent=`${list.length} match${list.length===1?"":"es"} to clip`;
+}
+
+document.querySelectorAll("button.f").forEach(b=>{
+  b.addEventListener("click",()=>{
+    document.querySelectorAll("button.f").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active");
+    filter=b.dataset.c;
+    render();
+  });
+});
+render();
+</script>
+</body>
+</html>
