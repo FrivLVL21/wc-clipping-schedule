@@ -1,0 +1,23 @@
+name: Clip Commands (poller)
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"   # every 5 min (GitHub's minimum); each run polls ~3.5 min
+  workflow_dispatch:
+
+# Never run two pollers at once.
+concurrency:
+  group: tg-poller
+  cancel-in-progress: true
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Poll for commands
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          RUN_SECONDS: "210"
+        run: python3 bot_poll.py
